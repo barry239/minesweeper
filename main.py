@@ -4,23 +4,21 @@ import os
 clear = lambda: os.system('cls' if os.name == 'nt' else 'clear')
 
 class Minesweeper:
-    __difficulties = {
-        1: { 'size': 9, 'num': 10 },
-        2: { 'size': 16, 'num': 40 }
+    difficulties = {
+        '0': { 'size': 3, 'num': 2 },
+        '1': { 'size': 9, 'num': 10 },
+        '2': { 'size': 16, 'num': 40 }
     }
 
-    def __init__(self, difficulty: int) -> None:
-        self.size = self.__difficulties[difficulty]['size']
-        self.num = self.__difficulties[difficulty]['num']
+    def __init__(self, difficulty: str) -> None:
+        self.size = self.difficulties[difficulty]['size']
+        self.num = self.difficulties[difficulty]['num']
         self.board = [['.' for _ in range(self.size)] for _ in range(self.size)]
         self.mines = set()
 
     def generateMines(self) -> None:
         while len(self.mines) < self.num:
             self.mines.add((random.randint(1, self.size), random.randint(1, self.size)))
-
-    def containsMine(self, row: int, col: int) -> bool:
-        return (row, col) in self.mines
     
     def uncoverCell(self, row: int, col: int) -> None:
         count = 0
@@ -41,6 +39,16 @@ class Minesweeper:
         print(f"{' ' * (4 if self.size > 9 else 3)}+{'-' * self.size * 2}")
         print(f"{' ' * (6 if self.size > 9 else 5)}{' '.join([chr(i) for i in range(ord('a'), ord('a') + self.size)])}\n")
 
+    def containsMine(self, row: int, col: int) -> bool:
+        return (row, col) in self.mines
+    
+    def gameWon(self) -> bool:
+        count = 0
+        for row in self.board:
+            count += row.count('.')
+        
+        return count == self.num
+
     def finishGame(self, msg: str) -> None:
         self.showMines()
         self.displayBoard()
@@ -49,10 +57,25 @@ class Minesweeper:
 
 ## Show main menu
 clear()
-print('Elija la dificultad:')
-print('1) Principiante - 9 x 9 casillas, 10 minas')
-print('2) Avanzado - 16 x 16 casillas, 40 minas\n')
-difficulty = int(input())
+print('Bienvenido a Buscaminas\n')
+print('Instrucciones:')
+print('1) Elija una dificultad')
+print('2) Ingrese la coordenada de la casilla a descubrir (e.g. a1)')
+print('3) El juego finaliza al pisar una mina o descubrir todas las casillas vacías\n')
+input('Presione <Enter> para continuar...')
+
+## Select difficulty level
+while True:
+    clear()
+    print('1) Principiante - 9 x 9 casillas, 10 minas')
+    print('2) Avanzado - 16 x 16 casillas, 40 minas\n')
+    difficulty = input('Elija la dificultad: ')
+
+    if difficulty not in Minesweeper.difficulties:
+        print('\n[!!] Elija una opción correcta\n')
+        input('Presione <Enter> para continuar...')
+    else:
+        break
 
 ## Create minesweeper
 mspr = Minesweeper(difficulty)
@@ -77,3 +100,9 @@ while True:
 
     ## Uncover cell
     mspr.uncoverCell(row, col)
+
+    ## Check if the game was won
+    if mspr.gameWon():
+        clear()
+        mspr.finishGame('¡Felicidades!, has ganado')
+        break
