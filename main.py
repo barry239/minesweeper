@@ -41,6 +41,9 @@ class Minesweeper:
         print(f"{' ' * (4 if self.size > 9 else 3)}+{'-' * self.size * 2}")
         print(f"{' ' * (6 if self.size > 9 else 5)}{' '.join([chr(i) for i in range(ord('a'), ord('a') + self.size)])}\n")
 
+    def isUncovered(self, row: int, col: int) -> bool:
+        return self.board[row - 1][col - 1] != '.'
+
     def containsMine(self, row: int, col: int) -> bool:
         return (row, col) in self.mines
     
@@ -97,6 +100,9 @@ while True:
         continue
     col = ord(coord[0].lower()) - 96
     row = int(coord[1:])
+
+    ## Check if the cell is already uncovered
+    if mspr.isUncovered(row, col): continue
 
     ## Generate mines if it is the first shot
     if len(mspr.mines) == 0: mspr.generateMines((row, col))
