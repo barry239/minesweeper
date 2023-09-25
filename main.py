@@ -17,9 +17,10 @@ class Minesweeper:
         self.board = [['.' for _ in range(self.size)] for _ in range(self.size)]
         self.mines = set()
 
-    def generateMines(self) -> None:
+    def generateMines(self, seed: tuple[int, int]) -> None:
         while len(self.mines) < self.num:
-            self.mines.add((random.randint(1, self.size), random.randint(1, self.size)))
+            mine = (random.randint(1, self.size), random.randint(1, self.size))
+            if mine != seed: self.mines.add(mine)
     
     def uncoverCell(self, row: int, col: int) -> None:
         count = 0
@@ -27,7 +28,7 @@ class Minesweeper:
             for j in range(max(1, col - 1), min(self.size + 1, col + 2)):
                 if (i, j) in self.mines: count += 1
         
-        self.board[row - 1][col - 1] = str(count)
+        self.board[row - 1][col - 1] = str(count) if count != 0 else ' '
 
     def showMines(self) -> None:
         for mine in self.mines:
@@ -80,7 +81,6 @@ while True:
 
 ## Create minesweeper
 mspr = Minesweeper(difficulty)
-mspr.generateMines()
 
 ## Start game
 while True:
@@ -97,6 +97,9 @@ while True:
         continue
     col = ord(coord[0].lower()) - 96
     row = int(coord[1:])
+
+    ## Generate mines if it is the first shot
+    if len(mspr.mines) == 0: mspr.generateMines((row, col))
 
     ## Check if a mine has been hit
     if mspr.containsMine(row, col):
