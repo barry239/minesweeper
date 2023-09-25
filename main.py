@@ -1,5 +1,6 @@
 import random
 import os
+import re
 
 clear = lambda: os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -88,9 +89,14 @@ while True:
     mspr.displayBoard()
     print('[DEBUG]', mspr.mines)
 
-    ## Enter coordinates
-    row = int(input('Ingrese la fila: '))
-    col = int(input('Ingrese la columna: '))
+    ## Get coordinate
+    coord = input('Ingrese la coordenada: ')
+    if not re.match(r'[a-z]\d{1,2}', coord, re.IGNORECASE):
+        print('\n[!!] Elija una coordenada válida\n')
+        input('Presione <Enter> para continuar...')
+        continue
+    col = ord(coord[0].lower()) - 96
+    row = int(coord[1:])
 
     ## Check if a mine has been hit
     if mspr.containsMine(row, col):
