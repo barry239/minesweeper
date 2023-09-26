@@ -44,6 +44,13 @@ class Minesweeper:
     
     def containsMine(self, row: int, col: int) -> bool:
         return (row, col) in self.mines
+    
+    def gameWon(self) -> bool:
+        count = 0
+        for row in self.board:
+            count += row.count('.')
+        
+        return count == self.num
 
     def finishGame(self, msg: str) -> None:
         self.showMines()

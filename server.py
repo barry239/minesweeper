@@ -57,3 +57,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as ss:
             ## Uncover cell
             value = mspr.uncoverCell(row, col)
             conn.send(value.encode())
+            conn.recv(BUF_SIZE) # Unused recv
+
+            ## Check if the game was won
+            conn.send(b'Game won' if mspr.gameWon() else b'Game continues')
+            if mspr.gameWon():
+                conn.recv(BUF_SIZE) # Unused recv
+                conn.send(json.dumps(list(mspr.mines)).encode())
+                print('[DEBUG] Game won')
+                break
