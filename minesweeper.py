@@ -52,7 +52,7 @@ class Minesweeper:
         
         return count == self.num
 
-    def finishGame(self, msg: str) -> None:
+    def finishGame(self, msg: str, time: float) -> None:
         self.showMines()
         self.displayBoard()
-        print('[+]', msg)
+        print('[+]', msg, f'Tiempo: {time:.2f} s')

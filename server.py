@@ -1,5 +1,6 @@
 import socket
 import json
+import time
 from minesweeper import Minesweeper
 
 
@@ -27,6 +28,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as ss:
         mspr = Minesweeper(difficulty)
         conn.send(b'Game started')
 
+        ## Get current time
+        start = time.time()
+
         ## Start game
         while True:
             ## Get coordinate
@@ -50,7 +54,14 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as ss:
             if mspr.containsMine(row, col):
                 conn.send(b'Game over')
                 conn.recv(BUF_SIZE) # Unused recv
+
+                ## Send mines location
                 conn.send(json.dumps(list(mspr.mines)).encode())
+                conn.recv(BUF_SIZE) # Unused recv
+
+                ## Send elapsed time
+                conn.send(str(time.time() - start).encode())
+
                 print('[DEBUG] Game over')
                 break
 
@@ -63,6 +74,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as ss:
             conn.send(b'Game won' if mspr.gameWon() else b'Game continues')
             if mspr.gameWon():
                 conn.recv(BUF_SIZE) # Unused recv
+
+                ## Send mines location
                 conn.send(json.dumps(list(mspr.mines)).encode())
+                conn.recv(BUF_SIZE) # Unused recv
+
+                ## Send elapsed time
+                conn.send(str(time.time() - start).encode())
+
                 print('[DEBUG] Game won')
                 break

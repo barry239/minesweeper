@@ -82,8 +82,15 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             ## Check if a mine has been hit
             if msg == 'Game over':
                 clear()
+
+                ## Receive mines location
                 mspr.mines = json.loads(s.recv(BUF_SIZE).decode())
-                mspr.finishGame('Juego terminado, seleccionaste una mina')
+                s.send(b'unused') # Unused send
+
+                ## Receive elapsed time
+                elapsed = float(s.recv(BUF_SIZE).decode())
+
+                mspr.finishGame('Juego terminado, seleccionaste una mina.', elapsed)
                 break
 
             ## Uncover cell
@@ -94,8 +101,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
             ## Check if the game was won
             if msg == 'Game won':
-                clear()
                 s.send(b'unused') # Unused send
+
+                clear()
+
+                ## Receive mines location
                 mspr.mines = json.loads(s.recv(BUF_SIZE).decode())
-                mspr.finishGame('¡Felicidades!, has ganado')
+                s.send(b'unused') # Unused send
+
+                ## Receive elapsed time
+                elapsed = float(s.recv(BUF_SIZE).decode())
+
+                mspr.finishGame('¡Felicidades!, has ganado.', elapsed)
                 break
