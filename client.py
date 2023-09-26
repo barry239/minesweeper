@@ -83,7 +83,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
             ## Check if the cell is already uncovered
             msg = s.recv(BUF_SIZE).decode()
-            if msg == 'Uncovered': continue
+            if msg == 'Uncovered':
+                print('\n[!!] La casilla ya fue descubierta\n')
+                input('Presione <Enter> para continuar...')
+                continue
             s.send(b'unused') # Unused send
 
             ## Receive server response
