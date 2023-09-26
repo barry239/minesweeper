@@ -1,18 +1,31 @@
 import socket
 import json
 import time
+import re
 from minesweeper import Minesweeper
 
 
-HOST = '127.0.0.1'
-PORT = 3000
 BUF_SIZE = 1024
 
 
+## Enter host
+while True:
+    host = input('Ingrese la dirección IP: ')
+    if re.match(r'^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$', host): break
+    print('\n[!!] Ingrese una dirección válida\n')
+
+## Enter port
+while True:
+    port = input('Ingrese el número de puerto: ')
+    if re.match(r'^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$', port): break
+    print('\n[!!] Ingrese un puerto válido\n')
+port = int(port)
+
 ## Create server socket
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as ss:
-    ss.bind((HOST, PORT))
+    ss.bind((host, port))
     ss.listen()
+    print(f'[+] Server sucessfully started on {host}:{port}')
     print('[+] Listening for incomming connections...')
 
     ## Accept client

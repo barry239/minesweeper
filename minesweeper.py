@@ -2,7 +2,6 @@ import random
 
 class Minesweeper:
     difficulties = {
-        '0': { 'size': 3, 'num': 2 },
         '1': { 'size': 9, 'num': 10 },
         '2': { 'size': 16, 'num': 40 }
     }
