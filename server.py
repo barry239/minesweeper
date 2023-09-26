@@ -27,11 +27,21 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as ss:
         conn.sendall(b'Game started')
 
         ## Start game
-        print('[DEBUG] Mines:', mspr.mines)
         while True:
             ## Get coordinate
             coord = conn.recv(BUF_SIZE).decode()
             col = ord(coord[0].lower()) - 96
             row = int(coord[1:])
+
+            ## Check if the cell is already uncovered
+            if mspr.isUncovered(row, col):
+                conn.sendall(b'Uncovered')
+                continue
+            else: conn.sendall(b'Covered')
+
+            ## Generate mines if it is the first shot
+            if len(mspr.mines) == 0:
+                mspr.generateMines((row, col))
+                print('[DEBUG] Mines:', mspr.mines)
 
             print(f'({row},{col})')

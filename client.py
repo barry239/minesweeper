@@ -66,3 +66,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 input('Presione <Enter> para continuar...')
                 continue
             s.sendall(coord.encode())
+
+            ## Check server response
+            msg = s.recv(BUF_SIZE).decode()
+            if msg == 'Uncovered': continue
