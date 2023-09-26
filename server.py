@@ -1,4 +1,5 @@
 import socket
+import json
 from minesweeper import Minesweeper
 
 
@@ -24,7 +25,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as ss:
 
         ## Create minesweeper
         mspr = Minesweeper(difficulty)
-        conn.sendall(b'Game started')
+        conn.send(b'Game started')
 
         ## Start game
         while True:
@@ -35,13 +36,24 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as ss:
 
             ## Check if the cell is already uncovered
             if mspr.isUncovered(row, col):
-                conn.sendall(b'Uncovered')
+                conn.send(b'Uncovered')
                 continue
-            else: conn.sendall(b'Covered')
+            else: conn.send(b'Covered')
+            conn.recv(BUF_SIZE) # Unused recv
 
             ## Generate mines if it is the first shot
             if len(mspr.mines) == 0:
                 mspr.generateMines((row, col))
                 print('[DEBUG] Mines:', mspr.mines)
 
-            print(f'({row},{col})')
+            ## Check if a mine has been hit
+            if mspr.containsMine(row, col):
+                conn.send(b'Game over')
+                conn.recv(BUF_SIZE) # Unused recv
+                conn.send(json.dumps(list(mspr.mines)).encode())
+                print('[DEBUG] Game over')
+                break
+
+            ## Uncover cell
+            value = mspr.uncoverCell(row, col)
+            conn.send(value.encode())

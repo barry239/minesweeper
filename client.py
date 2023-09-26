@@ -1,6 +1,7 @@
 import socket
 import os
 import re
+import json
 from minesweeper import Minesweeper
 
 
@@ -44,7 +45,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             print('\n[!!] Elija una opción correcta\n')
             input('Presione <Enter> para continuar...')
         else:
-            s.sendall(difficulty.encode())
+            s.send(difficulty.encode())
             break
 
     ## Check server response
@@ -65,8 +66,25 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 print('\n[!!] Elija una coordenada válida\n')
                 input('Presione <Enter> para continuar...')
                 continue
-            s.sendall(coord.encode())
+            s.send(coord.encode())
+            col = ord(coord[0].lower()) - 96
+            row = int(coord[1:])
 
-            ## Check server response
+            ## Check if the cell is already uncovered
             msg = s.recv(BUF_SIZE).decode()
             if msg == 'Uncovered': continue
+            s.send(b'unused') # Unused send
+
+            ## Receive server response
+            msg = s.recv(BUF_SIZE).decode()
+
+            ## Check if a mine has been hit
+            if msg == 'Game over':
+                clear()
+                s.send(b'unused') # Unused send
+                mspr.mines = json.loads(s.recv(BUF_SIZE).decode())
+                mspr.finishGame('Juego terminado, seleccionaste una mina')
+                break
+
+            ## Uncover cell
+            mspr.board[row - 1][col - 1] = msg

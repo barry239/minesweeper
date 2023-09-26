@@ -18,6 +18,20 @@ class Minesweeper:
             mine = (random.randint(1, self.size), random.randint(1, self.size))
             if mine != seed: self.mines.add(mine)
 
+    def uncoverCell(self, row: int, col: int) -> str:
+        count = 0
+        for i in range(max(1, row - 1), min(self.size + 1, row + 2)):
+            for j in range(max(1, col - 1), min(self.size + 1, col + 2)):
+                if (i, j) in self.mines: count += 1
+        
+        self.board[row - 1][col - 1] = str(count) if count != 0 else ' '
+
+        return self.board[row - 1][col - 1]
+    
+    def showMines(self) -> None:
+        for mine in self.mines:
+            self.board[mine[0] - 1][mine[1] - 1] = '*'
+
     def displayBoard(self) -> None:
         for i, row in enumerate(self.board):
             print(f"{' ' if self.size > 9 else ''}{i + 1:>2} | ", end='')
@@ -27,3 +41,11 @@ class Minesweeper:
 
     def isUncovered(self, row: int, col: int) -> bool:
         return self.board[row - 1][col - 1] != '.'
+    
+    def containsMine(self, row: int, col: int) -> bool:
+        return (row, col) in self.mines
+
+    def finishGame(self, msg: str) -> None:
+        self.showMines()
+        self.displayBoard()
+        print('[+]', msg)
