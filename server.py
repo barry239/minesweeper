@@ -1,12 +1,5 @@
 import socket
-
-
-class Minesweeper:
-    difficulties = {
-        '0': { 'size': 3, 'num': 2 },
-        '1': { 'size': 9, 'num': 10 },
-        '2': { 'size': 16, 'num': 40 }
-    }
+from minesweeper import Minesweeper
 
 
 HOST = '127.0.0.1'
@@ -26,11 +19,19 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as ss:
         print('[+] Connected by', addr)
 
         ## Get difficulty level
-        while True:
-            difficulty = conn.recv(BUF_SIZE).decode()
+        difficulty = conn.recv(BUF_SIZE).decode()
+        print('[DEBUG] Game difficulty:', difficulty)
 
-            if difficulty in Minesweeper.difficulties:
-                conn.sendall(b'Game started')
-                break
-            else:
-                conn.sendall(b'Invalid option')
+        ## Create minesweeper
+        mspr = Minesweeper(difficulty)
+        conn.sendall(b'Game started')
+
+        ## Start game
+        print('[DEBUG] Mines:', mspr.mines)
+        while True:
+            ## Get coordinate
+            coord = conn.recv(BUF_SIZE).decode()
+            col = ord(coord[0].lower()) - 96
+            row = int(coord[1:])
+
+            print(f'({row},{col})')

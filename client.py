@@ -1,5 +1,7 @@
 import socket
 import os
+import re
+from minesweeper import Minesweeper
 
 
 HOST = '127.0.0.1'
@@ -38,11 +40,29 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     while True:
         difficulty = showDifficultyMenu()
 
-        s.sendall(difficulty.encode())
-        msg = s.recv(BUF_SIZE).decode()
-
-        if msg != 'Game started':
+        if difficulty not in Minesweeper.difficulties:
             print('\n[!!] Elija una opción correcta\n')
             input('Presione <Enter> para continuar...')
         else:
+            s.sendall(difficulty.encode())
             break
+
+    ## Check server response
+    msg = s.recv(BUF_SIZE).decode()
+    if msg == 'Game started':
+        ## Create minesweeper
+        mspr = Minesweeper(difficulty)
+
+        ## Start game
+        while True:
+            ## Display board
+            clear()
+            mspr.displayBoard()
+
+            ## Get coordinate
+            coord = input('Ingrese la coordenada: ')
+            if not re.match(r'[a-z]\d{1,2}', coord, re.IGNORECASE):
+                print('\n[!!] Elija una coordenada válida\n')
+                input('Presione <Enter> para continuar...')
+                continue
+            s.sendall(coord.encode())
