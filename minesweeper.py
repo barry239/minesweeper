@@ -2,6 +2,7 @@ import random
 
 class Minesweeper:
     difficulties = {
+        '0': { 'size': 3, 'num': 1 },
         '1': { 'size': 9, 'num': 10 },
         '2': { 'size': 16, 'num': 40 }
     }
@@ -31,7 +32,8 @@ class Minesweeper:
         for mine in self.mines:
             self.board[mine[0] - 1][mine[1] - 1] = '*'
 
-    def displayBoard(self) -> None:
+    def displayBoard(self, num: int) -> None:
+        print(f'Número de jugador: {num}\n')
         for i, row in enumerate(self.board):
             print(f"{' ' if self.size > 9 else ''}{i + 1:>2} | ", end='')
             print(' '.join(row))
@@ -51,7 +53,7 @@ class Minesweeper:
         
         return count == self.num
 
-    def finishGame(self, msg: str, time: float) -> None:
+    def finishGame(self, msg: str, num: int, time: float) -> None:
         self.showMines()
-        self.displayBoard()
+        self.displayBoard(num)
         print('[+]', msg, f'Tiempo: {time:.2f} s')

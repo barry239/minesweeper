@@ -1,99 +1,143 @@
 import socket
 import json
 import time
-import re
+import threading
+import logging
+import helpers
 from minesweeper import Minesweeper
 
 
 BUF_SIZE = 1024
 
 
-## Enter host
-while True:
-    host = input('Ingrese la dirección IP: ')
-    if re.match(r'^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$', host): break
-    print('\n[!!] Ingrese una dirección válida\n')
+def sendAll(msg: str) -> None:
+    global connections
 
-## Enter port
-while True:
-    port = input('Ingrese el número de puerto: ')
-    if re.match(r'^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$', port): break
-    print('\n[!!] Ingrese un puerto válido\n')
-port = int(port)
+    for conn in connections: conn.send(msg.encode())
 
-## Create server socket
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as ss:
-    ss.bind((host, port))
-    ss.listen()
-    print(f'[+] Server sucessfully started on {host}:{port}')
-    print('[+] Listening for incomming connections...')
+def handleGame(conn: socket.socket, i: int) -> None:
+    global mspr, start, connections
 
-    ## Accept client
-    conn, addr = ss.accept()
-    with conn:
-        print('[+] Connected by', addr)
-
-        ## Get difficulty level
-        difficulty = conn.recv(BUF_SIZE).decode()
-        print('[DEBUG] Game difficulty:', difficulty)
-
-        ## Create minesweeper
-        mspr = Minesweeper(difficulty)
-        conn.send(b'Game started')
-
-        ## Get current time
-        start = time.time()
+    try:
+        ## Send player number
+        conn.send(json.dumps({'type': 0, 'cont': i}).encode())
 
         ## Start game
-        while True:
+        playing = True
+        while playing:
             ## Get coordinate
-            coord = conn.recv(BUF_SIZE).decode()
+            msg = json.loads(conn.recv(BUF_SIZE).decode())
+            coord = msg['cont']
             col = ord(coord[0].lower()) - 96
             row = int(coord[1:])
 
             ## Check if the cell is already uncovered
             if mspr.isUncovered(row, col):
-                conn.send(b'Uncovered')
+                conn.send(json.dumps({'type': 2, 'cont': 'Uncovered'}).encode())
                 continue
-            else: conn.send(b'Covered')
-            conn.recv(BUF_SIZE) # Unused recv
+            else: conn.send(json.dumps({'type': 2, 'cont': 'Covered'}).encode())
 
             ## Generate mines if it is the first shot
             if len(mspr.mines) == 0:
                 mspr.generateMines((row, col))
-                print('[DEBUG] Mines:', mspr.mines)
-
+                logging.debug('Mines: %s', mspr.mines)
+            
             ## Check if a mine has been hit
             if mspr.containsMine(row, col):
-                conn.send(b'Game over')
-                conn.recv(BUF_SIZE) # Unused recv
+                sendAll(json.dumps({'type': 4, 'cont': 'Game over'}))
+                time.sleep(1.2)
 
                 ## Send mines location
-                conn.send(json.dumps(list(mspr.mines)).encode())
                 conn.recv(BUF_SIZE) # Unused recv
+                time.sleep(1.2)
+                sendAll(json.dumps({'type': 6, 'cont': list(mspr.mines)}))
+                time.sleep(1.2)
 
                 ## Send elapsed time
-                conn.send(str(time.time() - start).encode())
+                conn.recv(BUF_SIZE) # Unused recv
+                time.sleep(1.2)
+                sendAll(json.dumps({'type': 7, 'cont': time.time() - start}))
 
-                print('[DEBUG] Game over')
-                break
+                logging.debug('Game over')
+                playing = False
 
             ## Uncover cell
             value = mspr.uncoverCell(row, col)
-            conn.send(value.encode())
-            conn.recv(BUF_SIZE) # Unused recv
+            sendAll(json.dumps({'type': 3, 'cont': coord, 'val': value}))
 
             ## Check if the game was won
-            conn.send(b'Game won' if mspr.gameWon() else b'Game continues')
             if mspr.gameWon():
-                conn.recv(BUF_SIZE) # Unused recv
+                sendAll(json.dumps({'type': 5, 'cont': 'Game won'}))
 
                 ## Send mines location
-                conn.send(json.dumps(list(mspr.mines)).encode())
                 conn.recv(BUF_SIZE) # Unused recv
+                sendAll(json.dumps({'type': 6, 'cont': list(mspr.mines)}))
 
                 ## Send elapsed time
-                conn.send(str(time.time() - start).encode())
+                conn.recv(BUF_SIZE) # Unused recv
+                sendAll(json.dumps({'type': 7, 'cont': time.time() - start}))
 
-                print('[DEBUG] Game won')
-                break
+                logging.debug('Game won')
+                playing = False
+    except ConnectionResetError:
+        connections.pop(connections.index(conn))
+        logging.debug('Jugador %i desconectado', i)
+
+def acceptConnections(ss: socket.socket) -> None:
+    global num, connections, cthreads
+    
+    for i in range(num):
+        conn, addr = ss.accept()
+        logging.debug('Connected by %s', addr)
+
+        ## Add to connection list
+        connections.append(conn)
+
+        ## Create client thread
+        t = threading.Thread(target=handleGame, args=(conn, i))
+        cthreads.append(t)
+
+
+## Configure logging
+logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.NOTSET)
+
+## Enter host
+# host = helpers.getHost()
+host = '127.0.0.1'
+
+## Enter port
+# port = helpers.getPort()
+port = 3000
+
+## Enter number of connections
+# num = helpers.getNumConnections()
+num = 2
+
+## Create server socket
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as ss:
+    ss.bind((host, port))
+    ss.listen()
+    logging.debug('Server sucessfully started on %s:%s', host, port)
+    logging.info('Listening for incomming connections...')
+
+    ## Accept clients
+    connections = []
+    cthreads = []
+    athread = threading.Thread(target=acceptConnections, args=(ss,))
+    athread.start()
+    athread.join()
+    
+    ## Create minesweeper
+    mspr = Minesweeper('0')
+
+    ## Get current time
+    start = time.time()
+
+    ## Start threads
+    for t in cthreads: t.start()
+
+    ## Wait for threads
+    for t in cthreads: t.join()
+
+    ## Close connections
+    for conn in connections: conn.close()
