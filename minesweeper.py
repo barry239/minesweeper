@@ -32,8 +32,9 @@ class Minesweeper:
         for mine in self.mines:
             self.board[mine[0] - 1][mine[1] - 1] = '*'
 
-    def displayBoard(self, num: int) -> None:
-        print(f'Número de jugador: {num}\n')
+    def displayBoard(self, num: int, turn: int = 0) -> None:
+        print(f'Número de jugador: {num + 1}')
+        print(f'Turno del jugador: {turn + 1}\n')
         for i, row in enumerate(self.board):
             print(f"{' ' if self.size > 9 else ''}{i + 1:>2} | ", end='')
             print(' '.join(row))
